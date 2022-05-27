@@ -2,6 +2,7 @@
 
 namespace Radebatz\OpenApi\Spec\Serializer;
 
+use BackedEnum;
 use OpenApi\Attributes\OpenApiAttributeInterface;
 
 class SerializerChain implements SerializerInterface
@@ -13,7 +14,7 @@ class SerializerChain implements SerializerInterface
     {
     }
 
-    public function serialize(OpenApiAttributeInterface|int|bool|array|string|null $value, ?SerializerResolver $serializerResolver): mixed
+    public function serialize(OpenApiAttributeInterface|int|bool|array|string|null|BackedEnum $value, ?SerializerResolver $serializerResolver): mixed
     {
         foreach ($this->serializers as $serializer) {
             $value = $serializer->serialize($value, $serializerResolver);

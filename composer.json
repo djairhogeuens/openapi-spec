@@ -1,6 +1,6 @@
 {
     "name": "radebatz/openapi-spec",
-    "description": "Create OpenAPI specs from PHP Attributes.",
+    "description": "Create OpenAPI 3 compliant specifications from PHP attributes.",
     "license": [
         "MIT"
     ],
@@ -9,6 +9,10 @@
         {
             "name": "Martin Rademacher",
             "email": "mano@radebatz.org"
+        },
+        {
+            "name": "Djairho Geuens",
+            "email": "djairhogeuens@gmail.com"
         }
     ],
     "prefer-stable": true,

@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Radebatz\OpenApi\Spec;
 
+use OpenApi\Attributes\Media\ArraySchema;
 use OpenApi\Attributes\Media\Schema;
 use OpenApi\Attributes\OpenApiAttributeInterface;
 use OpenApi\Attributes\Parameter;
@@ -19,6 +22,8 @@ use Reflector;
  */
 class Collector
 {
+    use Helper;
+
     public function __construct(protected LoggerInterface $logger = new NullLogger())
     {
     }
@@ -65,13 +70,24 @@ class Collector
         return $attributes;
     }
 
-    protected function collectProperty(\ReflectionProperty $reflectionProperty, array $attributes): array
+    protected function collectProperty(ReflectionProperty $reflectionProperty, array $attributes): array
     {
         foreach ($attributes as $attribute) {
             if ($attribute instanceof Schema) {
                 // type details?
-                $attribute->name = $reflectionProperty->getName();
+                $attribute->name = !empty($attribute->name) ? $attribute->name : $reflectionProperty->getName();
+            } elseif ($attribute instanceof ArraySchema) {
+                if (($reflectionType = $reflectionProperty->getType()) != null && (!$reflectionType instanceof ReflectionNamedType || $reflectionType->getName() != 'array')) {
+                    $this->logger->warning(sprintf('Property %s on %s has ArraySchema attribute but is not of type array', $reflectionProperty->getName(), $reflectionProperty->getDeclaringClass()->getName()));
+                } else {
+                    // TODO check docblock
+                    $attribute->name = $reflectionProperty->getName();
+                }
             }
+        }
+
+        if (!$this->first($attributes, Schema::class)) {
+            $attributes[] = new Schema(name: $reflectionProperty->getName());
         }
 
         return $attributes;

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Radebatz\OpenApi\Spec;
 
@@ -16,5 +18,15 @@ trait Helper
         $name = $this->fqdn2name($fqdn);
 
         return "#components/schemas/$name";
+    }
+
+    protected function all(array $attributes, string $class): array
+    {
+        return array_filter($attributes, fn ($attribute) => $attribute instanceof $class);
+    }
+
+    protected function first(array $attributes, string $class)
+    {
+        return ($match = $this->all($attributes, $class)) ? array_pop($match) : null;
     }
 }

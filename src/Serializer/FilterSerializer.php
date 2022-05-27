@@ -2,6 +2,7 @@
 
 namespace Radebatz\OpenApi\Spec\Serializer;
 
+use BackedEnum;
 use OpenApi\Attributes\OpenApiAttributeInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -13,7 +14,7 @@ class FilterSerializer extends DefaultSerializer
         parent::__construct($logger);
     }
 
-    public function serialize(OpenApiAttributeInterface|array|int|string|bool|null $value, ?SerializerResolver $serializerResolver): mixed
+    public function serialize(OpenApiAttributeInterface|array|int|string|bool|null|BackedEnum $value, ?SerializerResolver $serializerResolver): mixed
     {
         assert(is_array($value));
 

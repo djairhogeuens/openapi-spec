@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Radebatz\OpenApi\Spec;
 
+use OpenApi\Attributes\Hidden;
 use OpenApi\Attributes\Media\Schema;
 use OpenApi\Attributes\Method;
 use OpenApi\Attributes\OpenAPIDefinition;
@@ -38,17 +41,17 @@ class Merger
             ],
         ];
 
-        $all = fn (array $attributes, string $class) => array_filter($attributes, fn ($attribute) => $attribute instanceof $class);
-        $first = fn (array $attributes, string $class) => ($match = $all($attributes, $class)) ? array_pop($match) : null;
-
         foreach ($attributes as $fqdn => $fqdnDetails) {
+            if ($this->first($fqdnDetails['object'][0], Hidden::class) || $this->first($fqdnDetails['object'][0], Schema::class)?->hidden) {
+                continue;
+            }
             foreach ($fqdnDetails as $type => $typeAttributes) {
                 if ('properties' == $type && $typeAttributes) {
                     $data['components']['schemas'] += $this->mergeSchema($fqdn, $typeAttributes);
                 }
                 foreach ($typeAttributes as $attributes) {
-                    if ($path = $first($attributes, Path::class)) {
-                        $data['paths'][$path->path] = $this->mergePath($path, $attributes);
+                    if (($path = $this->first($attributes, Path::class)) && !$this->first($attributes, Hidden::class) && !$this->first($attributes, Operation::class)?->hidden) {
+                        $data['paths'][$path->path] = array_merge($data['paths'][$pathPrefix . $path->path] ?? [], $this->mergePath($path, $attributes));
                         continue;
                     }
                     foreach ($attributes as $attribute) {
@@ -69,11 +72,8 @@ class Merger
 
     protected function mergePath(Path $path, array $attributes): array
     {
-        $all = fn (array $attributes, string $class) => array_filter($attributes, fn ($attribute) => $attribute instanceof $class);
-        $first = fn (array $attributes, string $class) => ($match = $all($attributes, $class)) ? array_pop($match) : null;
-
-        $responses = $all($attributes, ApiResponse::class);
-        if ($responses && ($returnType = $first($attributes, ReturnType::class))) {
+        $responses = $this->all($attributes, ApiResponse::class);
+        if ($responses && ($returnType = $this->first($attributes, ReturnType::class))) {
             array_walk($responses, function (ApiResponse $response) use ($returnType) {
                 foreach ($response->content as $content) {
                     $content->schema ??= new Schema();
@@ -82,17 +82,17 @@ class Merger
             });
         }
 
-        $parameters = $all($attributes, Parameter::class);
+        $parameters = $this->all($attributes, Parameter::class);
 
         $details = [
-            $first($attributes, Operation::class),
+            $this->first($attributes, Operation::class),
             'parameters' => $parameters,
-            'requestBody' => $first($attributes, RequestBody::class),
-            'responses' => $all($attributes, ApiResponse::class),
+            'requestBody' => $this->first($attributes, RequestBody::class),
+            'responses' => $this->all($attributes, ApiResponse::class),
         ];
 
         $methods = [];
-        foreach ($all($attributes, Method::class) as $method) {
+        foreach ($this->all($attributes, Method::class) as $method) {
             $methods[strtolower((new ReflectionClass($method))->getShortName())] = $details;
         }
 
@@ -107,12 +107,12 @@ class Merger
         ];
 
         foreach ($attributes as $name => $propertyAttributes) {
-            assert(1 == count($propertyAttributes));
-            if (!$attribute = array_pop($propertyAttributes)) {
+            $schemaAttribute = $this->first($propertyAttributes, Schema::class);
+            assert($schemaAttribute != null);
+            if ($this->first($propertyAttributes, Hidden::class) || $schemaAttribute->hidden) {
                 continue;
             }
-            assert($attribute instanceof Schema);
-            $schema['properties'][$attribute->name] = $attribute;
+            $schema['properties'][$schemaAttribute->name] = $schemaAttribute;
         }
 
         return $schema['properties'] ? [$this->fqdn2name($fqdn) => $schema] : [];

@@ -2,6 +2,7 @@
 
 namespace Radebatz\OpenApi\Spec\Serializer;
 
+use BackedEnum;
 use OpenApi\Attributes\OpenApiAttributeInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -17,7 +18,7 @@ class DefaultSerializer implements SerializerInterface
     {
     }
 
-    public function serialize(OpenApiAttributeInterface|array|int|string|bool|null $value, ?SerializerResolver $serializerResolver): mixed
+    public function serialize(OpenApiAttributeInterface|array|int|string|bool|null|BackedEnum $value, ?SerializerResolver $serializerResolver): mixed
     {
         if (is_object($value) || is_array($value)) {
             $data = [];
