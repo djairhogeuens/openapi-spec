@@ -45,13 +45,14 @@ class Merger
             if ($this->first($fqdnDetails['object'][0], Hidden::class) || $this->first($fqdnDetails['object'][0], Schema::class)?->hidden) {
                 continue;
             }
+            $pathPrefix = $this->first($fqdnDetails['object'][0], Path::class)?->path ?? '';
             foreach ($fqdnDetails as $type => $typeAttributes) {
                 if ('properties' == $type && $typeAttributes) {
                     $data['components']['schemas'] += $this->mergeSchema($fqdn, $typeAttributes);
                 }
                 foreach ($typeAttributes as $attributes) {
                     if (($path = $this->first($attributes, Path::class)) && !$this->first($attributes, Hidden::class) && !$this->first($attributes, Operation::class)?->hidden) {
-                        $data['paths'][$path->path] = array_merge($data['paths'][$pathPrefix . $path->path] ?? [], $this->mergePath($path, $attributes));
+                        $data['paths'][$pathPrefix . $path->path] = array_merge($data['paths'][$pathPrefix . $path->path] ?? [], $this->mergePath($path, $attributes));
                         continue;
                     }
                     foreach ($attributes as $attribute) {
